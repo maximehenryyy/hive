@@ -4,18 +4,6 @@ import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
 export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -23,11 +11,11 @@ export function Header() {
   const navigate = useNavigate();
 
   const handleSearch = useCallback(
-    debounce((query: string) => {
+    (query: string) => {
       if (query.length >= 2) {
         searchCreators(query);
       }
-    }, 500),
+    },
     [searchCreators]
   );
 
@@ -39,9 +27,6 @@ export function Header() {
   };
 
   const handleSelectCreator = (creator: any) => {
-    if (creator.platform === 'not_found' || creator.platform === 'error') {
-      return;
-    }
     setSearchQuery('');
     setShowResults(false);
     setSelectedCreator(creator);
@@ -55,22 +40,7 @@ export function Header() {
       case 'instagram': return '📸';
       case 'tiktok': return '📱';
       case 'twitch': return '🎮';
-      case 'not_found': return '❌';
-      case 'error': return '⚠️';
       default: return '🌐';
-    }
-  };
-
-  const getPlatformColor = (platform: string) => {
-    switch (platform) {
-      case 'youtube': return 'text-red-500';
-      case 'twitter': return 'text-blue-400';
-      case 'instagram': return 'text-pink-500';
-      case 'tiktok': return 'text-gray-900 dark:text-white';
-      case 'twitch': return 'text-purple-500';
-      case 'not_found': return 'text-gray-400';
-      case 'error': return 'text-red-500';
-      default: return 'text-gray-500';
     }
   };
 
@@ -88,7 +58,7 @@ export function Header() {
           />
 
           <AnimatePresence>
-            {showResults && (searchQuery.length >= 2 || searchResults.length > 0) && (
+            {showResults && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -102,8 +72,8 @@ export function Header() {
                       Recherche en cours...
                     </div>
                   </div>
-                ) : searchResults.creators?.length > 0 ? (
-                  searchResults.creators.map((creator) => (
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((creator) => (
                     <button
                       key={creator.username}
                       onClick={() => handleSelectCreator(creator)}
@@ -118,21 +88,19 @@ export function Header() {
                         <p className="font-medium text-gray-900 dark:text-white">
                           {creator.name}
                           {creator.verified && <span className="text-blue-500 ml-1">✓</span>}
+                          <span className="ml-1">{getPlatformIcon(creator.platform)}</span>
                         </p>
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className={getPlatformColor(creator.platform)}>
-                            {getPlatformIcon(creator.platform)}
-                          </span>
-                          <span className="text-gray-500">@{creator.username}</span>
-                        </div>
+                        <p className="text-sm text-gray-500">
+                          @{creator.username} • {new Intl.NumberFormat('fr-FR', { notation: 'compact' }).format(creator.followers)} abonnés
+                        </p>
                       </div>
                     </button>
                   ))
-                ) : (
+                ) : searchQuery.length >= 2 ? (
                   <div className="p-4 text-center text-gray-500">
                     Aucun créateur trouvé
                   </div>
-                )}
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>
